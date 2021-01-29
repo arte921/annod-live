@@ -12,10 +12,16 @@ const readJSON = async (path) => JSON.parse(
 const main = async () => {
     const config = await readJSON("config.json");
 
-    const kaart = await axios.post('https://gateway.apiportal.ns.nl/Spoorkaart-API/api/v1/spoorkaart', {
-        'Ocp-Apim-Subscription-Key': config.ns_app_key_primary,
-    });
+    const options = {
+        method: 'post',
+        url: 'https://gateway.apiportal.ns.nl/Spoorkaart-API/api/v1/spoorkaart',
+        data: {
+            'Ocp-Apim-Subscription-Key': config.ns_app_key_primary,
+        }
+    };
 
+
+    const kaart = await axios(options).catch(console.log);
 
     console.log(kaart);
 }
