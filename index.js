@@ -22,9 +22,9 @@ const main = async () => {
     // await dowloadData("/reisinformatie-api/api/v3/trips?fromStation=OP&viaStation=AH&toStation=NKK&passing=true", "temp")
     const route = await readJSON("temp");
 
-    let afstand = 0;
     route.trips[0].legs.forEach((leg) => {
         let vorigStation = "";
+        let afstand = 0;
         leg.stops.forEach((station, index) => {
             const volledigStation = stations.find((kandidaatStation) => kandidaatStation.namen.lang == station.name);
             
