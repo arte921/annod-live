@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const axios = require('axios');
+const https = require('https');
 
 const cwd = process.cwd();
 
@@ -12,18 +12,33 @@ const readJSON = async (path) => JSON.parse(
 const main = async () => {
     const config = await readJSON("config.json");
 
+    
+
+    const kaart = await haalKaartOp(config);
+
+    console.log(kaart);
+}
+
+const haalKaartOp = (config) => {
     const options = {
-        method: 'post',
-        url: 'https://gateway.apiportal.ns.nl/Spoorkaart-API/api/v1/spoorkaart',
-        data: {
-            'Ocp-Apim-Subscription-Key': config.ns_app_key_primary,
+        host: 'gateway.apiportal.ns.nl',
+        path: '/Spoorkaart-API/api/v1/spoorkaart/',
+        headers: {
+            "Ocp-Apim-Subscription-Key": config.ns_app_key_primary
         }
     };
 
+    let antwoord = '';
 
-    const kaart = await axios(options).catch(console.log);
-
-    console.log(kaart);
+    return new Promise ((resolve, reject) => {
+        https.request(options, (response) => {    
+            response.on('data', (deel) => antwoord += deel);
+    
+            response.on('end', () => {
+                resolve(antwoord);
+            });
+        }).end();
+    })
 }
 
 main();
