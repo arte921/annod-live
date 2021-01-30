@@ -5,34 +5,32 @@ const https = require('https');
 
 const cwd = process.cwd();
 
-const readJSON = async (path) => JSON.parse(
-    await fs.promises.readFile(path)
+const readJSON = async (locatie) => JSON.parse(
+    await fs.promises.readFile(path.join("opslag", locatie + ".json"))
 );
 
 const main = async () => {
-    const config = await readJSON("config.json");
+    const config = await readJSON("config");
 
+    // await dowloadData("/reisinformatie-api/api/v3/trips?fromStation=OP&viaStation=AH&toStation=NKK&passing=true", "temp", config.ns_app_key_primary)
+    const route = await readJSON("temp");
+    const stations = (await readJSON("stations")).payload;
 
-    console.log(afstand(
-        [
-            5.89916658401489,
-            51.9850006103516
-        ],
-        [
-            4.90027761459351,
-            52.3788871765137
-        ]
-    ));
+    let afstand = 0;
+    route.trips[0].legs.forEach((leg) => {
+        leg.stops.forEach((station) => {
+            const volledigStation = stations.find((kandidaatStation) => kandidaatStation.namen.lang == station.name)
+            console.log(volledigStation.code);
+        });
 
-    
+        console.log("Get out on the " + leg.destination.exitSide + " side of the train.\n");
+    });
 
-    // await updateAlles(config);
-    
-    const kaart = fs.promises.readFile(config.kaart_locatie);
-    const stations = fs.promises.readFile(config.stations_locatie);
-    const aankomsten = fs.promises.readFile(config.aankomsten_locatie);
-    const vertrekken = fs.promises.readFile(config.vertrekken_locatie);
+    return;
+    await updateAlles(config);
 }
+
+// TODO: stationafstand
 
 const updateAlles = async (config) => {
     dowloadData('/Spoorkaart-API/api/v1/spoorkaart/', config.kaart_locatie, config.ns_app_key_primary);
@@ -43,7 +41,7 @@ const updateAlles = async (config) => {
 
 const dowloadData = async (pad, locatie, ns_app_key_primary) => {
     const data = await haalDataOp(ns_app_key_primary, pad);
-    await fs.promises.writeFile(locatie, data);
+    await fs.promises.writeFile(path.join("opslag", locatie + ".json"), data);
 }
 
 const haalDataOp = (ns_app_key_primary, pad) => {
