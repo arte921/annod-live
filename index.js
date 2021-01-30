@@ -9,47 +9,79 @@ const readJSON = async (locatie) => JSON.parse(
     await fs.promises.readFile(path.join("opslag", locatie + ".json"))
 );
 
-const main = async () => {
-    const config = await readJSON("config");
+const readJSONSync = (locatie) => JSON.parse(
+    fs.readFileSync(path.join("opslag", locatie + ".json"))
+);
 
-    // await dowloadData("/reisinformatie-api/api/v3/trips?fromStation=OP&viaStation=AH&toStation=NKK&passing=true", "temp", config.ns_app_key_primary)
+const stations = readJSONSync("stations").payload;
+const spoorkaart = readJSONSync("spoorkaart").payload.features;
+const config = readJSONSync("config");
+
+const main = async () => {
+
+    // await dowloadData("/reisinformatie-api/api/v3/trips?fromStation=OP&viaStation=AH&toStation=NKK&passing=true", "temp")
     const route = await readJSON("temp");
-    const stations = (await readJSON("stations")).payload;
 
     let afstand = 0;
     route.trips[0].legs.forEach((leg) => {
-        leg.stops.forEach((station) => {
-            const volledigStation = stations.find((kandidaatStation) => kandidaatStation.namen.lang == station.name)
+        let vorigStation = "";
+        leg.stops.forEach((station, index) => {
+            const volledigStation = stations.find((kandidaatStation) => kandidaatStation.namen.lang == station.name);
+            
+
+            if (index != 0) {
+                afstand += stationAfstand(vorigStation, volledigStation.code);
+            }
+
             console.log(volledigStation.code);
+
+            vorigStation = volledigStation.code;
         });
 
+        console.log(afstand);
         console.log("Get out on the " + leg.destination.exitSide + " side of the train.\n");
     });
 
     return;
-    await updateAlles(config);
-}
+    await updateAlles();
+};
 
-// TODO: stationafstand
+const stationAfstand = (station1, station2) => {
+    const station1KleineLetters = station1.toLowerCase();
+    const station2KleineLetters = station2.toLowerCase();
 
-const updateAlles = async (config) => {
-    dowloadData('/Spoorkaart-API/api/v1/spoorkaart/', config.kaart_locatie, config.ns_app_key_primary);
-    dowloadData('/reisinformatie-api/api/v2/stations', config.stations_locatie, config.ns_app_key_primary);
-    dowloadData('/reisinformatie-api/api/v2/arrivals?maxJourneys=1000&station=UT', config.aankomsten_locatie, config.ns_app_key_primary);
-    dowloadData('/reisinformatie-api/api/v2/departures?maxJourneys=1000&station=UT', config.vertrekken_locatie, config.ns_app_key_primary);
-}
+    const feature = spoorkaart.find((feature) => {
+        return feature.properties.from == station1KleineLetters && feature.properties.to == station2KleineLetters ||
+        feature.properties.from == station2KleineLetters && feature.properties.to == station1KleineLetters
+    }
+    );
 
-const dowloadData = async (pad, locatie, ns_app_key_primary) => {
-    const data = await haalDataOp(ns_app_key_primary, pad);
+    let afstand = 0;
+    feature.geometry.coordinates.forEach((coordinaat, index) => {
+        if (index > 1) afstand += coordinaatAfstand(coordinaat, feature.geometry.coordinates[index - 1])
+    });
+
+    return afstand;
+};
+
+const updateAlles = async () => {
+    dowloadData('/Spoorkaart-API/api/v1/spoorkaart/', config.kaart_locatie);
+    dowloadData('/reisinformatie-api/api/v2/stations', config.stations_locatie);
+    dowloadData('/reisinformatie-api/api/v2/arrivals?maxJourneys=1000&station=UT', config.aankomsten_locatie);
+    dowloadData('/reisinformatie-api/api/v2/departures?maxJourneys=1000&station=UT', config.vertrekken_locatie);
+};
+
+const dowloadData = async (pad, locatie) => {
+    const data = await haalDataOp(config.ns_app_key_primary, pad);
     await fs.promises.writeFile(path.join("opslag", locatie + ".json"), data);
-}
+};
 
-const haalDataOp = (ns_app_key_primary, pad) => {
+const haalDataOp = (pad) => {
     const options = {
         host: 'gateway.apiportal.ns.nl',
         path: pad,
         headers: {
-            "Ocp-Apim-Subscription-Key": ns_app_key_primary
+            "Ocp-Apim-Subscription-Key": config.ns_app_key_primary
         }
     };
 
@@ -60,9 +92,9 @@ const haalDataOp = (ns_app_key_primary, pad) => {
             response.on('end', () => resolve(antwoord));
         }).end()
     );
-}
+};
 
-const afstand = (coordinaat1, coordinaat2) => {
+const coordinaatAfstand = (coordinaat1, coordinaat2) => {
     const radialenfactor = Math.PI / 180;
 
     const lat1 = coordinaat1[1] * radialenfactor;
@@ -79,6 +111,6 @@ const afstand = (coordinaat1, coordinaat2) => {
         Math.pow(Math.sin(dlon / 2), 2);
     
     return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+};
 
 main();
