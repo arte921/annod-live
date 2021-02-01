@@ -9,8 +9,9 @@ module.exports = (station1, station2) => {
     const feature = spoorkaart.find((feature) => {
         return feature.properties.from == station1KleineLetters && feature.properties.to == station2KleineLetters ||
         feature.properties.from == station2KleineLetters && feature.properties.to == station1KleineLetters
-    }
-    );
+    });
+
+    if (!feature) return 0;
 
     let afstand = 0;
     feature.geometry.coordinates.forEach((coordinaat, index) => {

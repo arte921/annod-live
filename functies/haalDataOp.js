@@ -4,7 +4,7 @@ const readJSONSync = require('./readJSONSync.js');
 const config = readJSONSync("config");
 
 module.exports = (pad, json = true) => {
-    console.log("downloading " + pad);
+    // console.log("downloading " + pad);
     const options = {
         host: 'gateway.apiportal.ns.nl',
         path: pad,
