@@ -7,26 +7,30 @@ const haalDataOp = require('./functies/haalDataOp.js');
 const vindStation = require('./functies/vindStation.js');
 const stationAfstand = require('./functies/stationAfstand.js');
 
-const stations = readJSONSync("stations").payload;
 const config = readJSONSync("config");
 
 const startDatum = new Date(config.startmoment);
 const eindDatum = new Date(startDatum.getTime() + config.speelduur_minuten * 60 * 1000);
 
+console.log(startDatum, eindDatum)
+
+console.log(startDatum, eindDatum);
+
 const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie, huidigeAfstand, routeTotNuToe) => {
     let negeerbareFeatures = [...negeerbareFeaturesReferentie];
     const vroegsteVertrektijd = new Date(aankomstTijd.getTime() + config.minimum_overstaptijd_seconden * 1000);
-    if (vroegsteVertrektijd > eindDatum) return console.log(huidigeAfstand, routeTotNuToe);
+
+    console.log(huidigeAfstand, routeTotNuToe, aankomstTijd);
+        if (vroegsteVertrektijd > eindDatum) return console.log("EEE", huidigeAfstand, routeTotNuToe, aankomstTijd);
 
     let ritjes = {};
 
     while (!ritjes.payload) {
+        // dateTime niet meer ondersteund voor binnenlandse stations??
         ritjes = await dowloadData(`/reisinformatie-api/api/v2/departures?station=${station}&dateTime=${vroegsteVertrektijd.toISOString()}&maxJourneys=${config.max_journeys_per_station}`, 'temp');
     }
 
     let berekendeVertrekken = [];
-
-    if (!ritjes) return console.log(ritjes);
 
     ritjes.payload.departures
         .filter((rit) => config.toegestane_treintypen.includes(rit.trainCategory))
@@ -45,16 +49,15 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
             let afstand = huidigeAfstand;
 
             volledigeRitLeg.stops.forEach((station, index) => {
-                // console.log(station.name);
                 const huidigStation = vindStation(station.name);
                 if (!huidigStation) return;
-                
-                // if (volledigStation.land == "D") afstand = -10000;
-                
+
                 if (index == 0) {
                     vorigeStationCode = huidigStation.code;
                     return;
                 }
+                
+                if (huidigStation.land == "D") return;
                 
                 afstand += stationAfstand(vorigeStationCode, huidigStation.code, negeerbareFeatures);
 
@@ -65,10 +68,8 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
 
                 vorigeStationCode = huidigStation.code;
             });
-
-            // console.log(rit.direction, rit.plannedDateTime);
         });
 };
 
-berekenRitjes(new Date(), 'AMF', [], 0, []);
+berekenRitjes(startDatum, config.start_station, [], 0, []);
 
