@@ -5,6 +5,7 @@ const config = readJSONSync("config");
 
 module.exports = (pad, json = true) => {
     // console.log("downloading " + pad);
+
     const options = {
         host: 'gateway.apiportal.ns.nl',
         path: pad,

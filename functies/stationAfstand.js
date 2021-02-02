@@ -2,7 +2,7 @@ const readJSONSync = require('./readJSONSync.js');
 const spoorkaart = readJSONSync("spoorkaart").payload.features;
 const coordinaatAfstand = require('./coordinaatAfstand.js');
 
-module.exports = (station1, station2) => {
+module.exports = (station1, station2, negeerbareFeatures) => {
     const station1KleineLetters = station1.toLowerCase();
     const station2KleineLetters = station2.toLowerCase();
 
@@ -12,6 +12,11 @@ module.exports = (station1, station2) => {
     });
 
     if (!feature) return 0;
+
+    const featureId = feature.properties.from + feature.properties.to;
+
+    if (negeerbareFeatures.includes(featureId)) return 0;
+    negeerbareFeatures.push(featureId);
 
     let afstand = 0;
     feature.geometry.coordinates.forEach((coordinaat, index) => {
