@@ -16,6 +16,8 @@ const config = readJSONSync("config");
 const startDatum = new Date(config.startmoment);
 const eindDatum = new Date(startDatum.getTime() + config.speelduur_minuten * 60 * 1000);
 
+console.log(startDatum, eindDatum);
+
 let kandidaatRoutes = [];
 let meesteAfstand = 0;
 
@@ -52,17 +54,14 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         berekendeVertrekken.push(rit.direction);
         const volledigeBestemming = vindStation(rit.direction);
         const volledigeritRaw = await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`, 'tempritje');
+        return;
         if (!volledigeritRaw.trips) console.log("============= GEEN VOLLEDIGE RIT VOOR =============", rit.direction, volledigeritRaw);
-        if (volledigeritRaw.trips[0].legs.length > 1) {
-            // console.log("===========MORE THAN ONE LEG=============", volledigeritRaw.trips[0].legs.length);
-            continue;
-        }
 
         let vorigeStationCode = "";
         let afstand = huidigeAfstand;
 
         for (const leg of volledigeritRaw.trips[0].legs) {
-            if (leg.origin.plannedDateTime > laatsteVertrekTijd) continue;
+            if (leg.origin.plannedDateTime > laatsteVertrekTijd) return;
             for (const [index, station] of leg.stops.entries()) {
                 const huidigStation = vindStation(station.name);
                 if (!huidigStation) continue;
