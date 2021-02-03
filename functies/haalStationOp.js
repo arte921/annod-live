@@ -11,7 +11,7 @@ module.exports = async (station) => {
     if (stationCache[station]) {
         ritjes = stationCache[station];
     } else {
-        const rawRitjes = await dowloadData(`/reisinformatie-api/api/v2/departures?station=${station}&maxJourneys=${config.max_journeys_per_station}`, 'temp');
+        const rawRitjes = await dowloadData(`/reisinformatie-api/api/v2/departures?station=${station}&maxJourneys=${config.max_journeys_per_station}`);
         if (!rawRitjes.payload) console.log("================= GEEN RAWRITJES PAYLOAD =================")
         ritjes = rawRitjes.payload;
         stationCache[station] = ritjes;

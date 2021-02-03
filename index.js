@@ -53,15 +53,15 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         if (berekendeVertrekken.includes(rit.direction)) continue;
         berekendeVertrekken.push(rit.direction);
         const volledigeBestemming = vindStation(rit.direction);
-        const volledigeritRaw = await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`, 'tempritje');
-        return;
+        const volledigeritRaw = await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`);
+        
         if (!volledigeritRaw.trips) console.log("============= GEEN VOLLEDIGE RIT VOOR =============", rit.direction, volledigeritRaw);
 
         let vorigeStationCode = "";
         let afstand = huidigeAfstand;
 
         for (const leg of volledigeritRaw.trips[0].legs) {
-            if (leg.origin.plannedDateTime > laatsteVertrekTijd) return;
+            if (leg.origin.plannedDateTime > laatsteVertrekTijd) continue;
             for (const [index, station] of leg.stops.entries()) {
                 const huidigStation = vindStation(station.name);
                 if (!huidigStation) continue;
@@ -71,7 +71,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
                     continue;
                 }
                 
-                if (huidigStation.land == "D") return;
+                if (huidigStation.land == "D") continue;
                 
                 afstand += stationAfstand(vorigeStationCode, huidigStation.code, negeerbareFeatures);
 
