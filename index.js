@@ -36,25 +36,27 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         eindtijd: aankomstTijd
     });
 
-    if (huidigeAfstand > meesteAfstand) console.log(huidigeAfstand, routeTotNuToe);
+    if (huidigeAfstand > meesteAfstand) {
+        meesteAfstand = huidigeAfstand;
+        console.log(huidigeAfstand, routeTotNuToe);
+    }
 
     let ritjes = await haalStationOp(station);
 
     let berekendeVertrekken = [];
 
-    const gefilterdeRitjes = ritjes.departures
-    .filter((rit) => config.toegestane_treintypen.includes(rit.trainCategory));
-    // .filter((rit) => !berekendeVertrekken.includes(rit.direction)) // doet niets???
-    // .filter((rit) => (new Date(rit.plannedDateTime) - aankomstTijd) / 1000 <= config.maximum_overstaptijd_seconden)
-
+    const gefilterdeRitjes = ritjes.departures.filter((rit) => config.toegestane_treintypen.includes(rit.trainCategory));
 
     for (const rit of gefilterdeRitjes) {
         if (berekendeVertrekken.includes(rit.direction)) continue;
         berekendeVertrekken.push(rit.direction);
         const volledigeBestemming = vindStation(rit.direction);
         const volledigeritRaw = await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`, 'tempritje');
-        if (!volledigeritRaw.trips) continue;
-        if (volledigeritRaw.trips[0].legs.length > 1) continue; // console.log("===========MORE THAN ONE LEG=============");
+        if (!volledigeritRaw.trips) console.log("============= GEEN VOLLEDIGE RIT VOOR =============", rit.direction, volledigeritRaw);
+        if (volledigeritRaw.trips[0].legs.length > 1) {
+            // console.log("===========MORE THAN ONE LEG=============", volledigeritRaw.trips[0].legs.length);
+            continue;
+        }
         const volledigeRitLeg = volledigeritRaw.trips[0].legs[0];
 
         let vorigeStationCode = "";

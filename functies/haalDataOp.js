@@ -5,7 +5,7 @@ const config = readJSONSync("config");
 
 let downloads = 0;
 
-module.exports = (pad, json = true) => {
+const main = (pad, json = true) => {
     // console.log("downloading " + pad);
     downloads++;
     if (downloads % 100 == 0) console.log("downloads: " + downloads);
@@ -21,8 +21,14 @@ module.exports = (pad, json = true) => {
     let antwoord = '';
 
     return new Promise ((resolve, reject) => https.request(options, (response) => {
-            response.on('data', (deel) => antwoord += deel);
-            response.on('end', () => resolve(json ? JSON.parse(antwoord) : antwoord));
+            if (response.statusCode == 200) {
+                response.on('data', (deel) => antwoord += deel);
+                response.on('end', () => resolve(json ? JSON.parse(antwoord) : antwoord));
+            } else {
+                return main(pad, json);
+            }
         }).end()
     );
 };
+
+module.exports = main;
