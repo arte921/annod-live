@@ -23,5 +23,7 @@ module.exports = (station1, station2, negeerbareFeatures) => {
         if (index > 1) afstand += coordinaatAfstand(coordinaat, feature.geometry.coordinates[index - 1])
     });
 
+    if (afstand == 0) console.log(station1KleineLetters, station2KleineLetters);
+
     return afstand;
 };

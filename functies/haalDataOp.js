@@ -3,8 +3,12 @@ const https = require('https');
 const readJSONSync = require('./readJSONSync.js');
 const config = readJSONSync("config");
 
+let downloads = 0;
+
 module.exports = (pad, json = true) => {
     // console.log("downloading " + pad);
+    downloads++;
+    if (downloads % 100 == 0) console.log("downloads: " + downloads);
 
     const options = {
         host: 'gateway.apiportal.ns.nl',
