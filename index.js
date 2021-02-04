@@ -64,15 +64,28 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         berekendeVertrekken.push(rit.direction);
         const volledigeBestemming = vindStation(rit.direction);
         if (!volledigeBestemming) continue;
-        const volledigeritRaw = await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`);
-        
+        const volledigeritRaw = await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`, "trip");
         if (!volledigeritRaw.trips) return;
+
+        let ritnummer = 0;
+
+        let vertrekTijd = new Date(volledigeritRaw.trips[0].legs[0].origin.plannedDateTime);
+        for (const vertrekKandidaat of volledigeritRaw.trips) {
+            vertrekTijd = new Date(volledigeritRaw.trips[0].legs[0].origin.plannedDateTime);
+            if (vertrekTijd > laatsteVertrekTijd) return;
+            if (vertrekTijd < vroegsteVertrektijd) continue;
+        }
+        
+        if (vertrekTijd < vroegsteVertrektijd) continue;
+
+        routeTotNuToe[routeTotNuToe.length - 1].vertrektijd = vertrekTijd.toISOString();
+        routeTotNuToe[routeTotNuToe.length - 1].overstaptijd_seconden = (vertrekTijd - aankomstTijd) / 1000;
 
         let vorigeStationCode = "";
         let afstand = huidigeAfstand;
 
         for (const leg of volledigeritRaw.trips[0].legs) {
-            if (leg.origin.plannedDateTime > laatsteVertrekTijd) continue;
+            if (leg.origin.plannedDateTime > laatsteVertrekTijd) return;
             for (const [index, station] of leg.stops.entries()) {
                 const huidigStation = vindStation(station.name);
                 if (!huidigStation) continue;
@@ -93,7 +106,10 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
                         huidigStation.code,
                         negeerbareFeatures,
                         afstand,
-                        [...routeTotNuToe, station.name],
+                        [...routeTotNuToe, {
+                            station: huidigStation.namen.lang,
+                            aankomsttijd: new Date(station.plannedArrivalDateTime).toISOString()
+                        }],
                         [...routeDeltas, afstand - huidigeAfstand],
                         rit.direction
                     ));
@@ -115,7 +131,10 @@ process.on('SIGINT', async () => {
     process.exit();
 });
 
-ritjesPromises.push(berekenRitjes(startDatum, config.start_station, [], 0, [vindStationVanCode(config.start_station).namen.lang], [], ''));
+ritjesPromises.push(berekenRitjes(startDatum, config.start_station, [], 0, [{
+        station: vindStationVanCode(config.start_station).namen.lang,
+        aankomsttijd: startDatum.toISOString()
+    }], [], ''));
 
 (async () => {
     await Promise.all(ritjesPromises);
