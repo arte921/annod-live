@@ -35,6 +35,8 @@ module.exports = async (pad, locatie) => {
         } else if (data.statusCode == 38) {
             // http error in client wordt 38 teruggestuurd door haalDataOp
             continue;
+        } else if (data.code == 400) {
+            console.log("bad request!", pad);
         } else {
             // request succesvol afgerond
             succesvolleRequests++;
