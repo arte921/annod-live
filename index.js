@@ -46,10 +46,9 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
     let ritjes = await haalStationOp(station);
 
     let berekendeVertrekken = [];
-
-    const gefilterdeRitjes = ritjes.departures.filter((rit) => config.toegestane_treintypen.includes(rit.trainCategory));
     // console.log("E");
-    for (const rit of gefilterdeRitjes) {
+    for (const rit of ritjes.departures) {
+        if (!config.toegestane_treintypen.includes(rit.trainCategory)) continue;
         if (berekendeVertrekken.includes(rit.direction)) continue;
         berekendeVertrekken.push(rit.direction);
         const volledigeBestemming = vindStation(rit.direction);
