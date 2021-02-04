@@ -36,7 +36,6 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         )
     ) return;
     
-
     const laatsteVertrekTijd = new Date(aankomstTijd.getTime() + config.maximum_overstaptijd_seconden * 1000);
     let negeerbareFeatures = [...negeerbareFeaturesReferentie];
     
@@ -83,7 +82,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
                     continue;
                 }
                 
-                if (huidigStation.land == "D") continue;
+                if (huidigStation.land == "D") continue;    //  TODO: meer landen
                 
                 afstand += stationAfstand(vorigeStationCode, huidigStation.code, negeerbareFeatures);
 
