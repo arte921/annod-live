@@ -3,6 +3,7 @@ const path = require("path");
 const haalDataOp = require('./haalDataOp.js');
 const wacht = require('./wacht.js');
 const readJSONSync = require('./readJSONSync.js');
+const writeJSON = require('./writeJSON.js');
 
 const config = readJSONSync("config");
 
@@ -10,9 +11,19 @@ let lopendeRequests = 0;
 
 let ratelimits = 0;
 let succesvolleRequests = 0;
+let preCachedRequest = 0;
+
+let cache = readJSONSync("cache");
+
+setTimeout((() => writeJSON(cache, "cache")), 1000);
 
 module.exports = async (pad, locatie) => {
     let data;
+
+    if (cache[pad]) {
+        preCachedRequest++;
+        return cache[pad];
+    }
 
     while (true) {
         if (lopendeRequests >= config.maximum_requests_per_tijdseenheid) {
@@ -29,7 +40,7 @@ module.exports = async (pad, locatie) => {
         if (data.statusCode == 429) {
             // NS geeft ratelimit aan
             ratelimits++;
-            if (ratelimits % 100 == 0) console.log(`${ratelimits} keer geratelimit, ${succesvolleRequests} keer doorgelaten`);
+            if (ratelimits % 100 == 0) console.log(`${ratelimits} keer geratelimit, ${succesvolleRequests} keer doorgelaten, ${preCachedRequest} keer uit cache opgehaald`);
             await wacht(config.ratelimit_wachttijd_milliseconden_curatief);
             continue;
         } else if (data.statusCode == 38) {
@@ -40,6 +51,7 @@ module.exports = async (pad, locatie) => {
         } else {
             // request succesvol afgerond
             succesvolleRequests++;
+            cache[pad] = data;
             break;
         }
     }
