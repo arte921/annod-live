@@ -47,7 +47,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
 
     if (huidigeAfstand > meesteAfstand) {
         meesteAfstand = huidigeAfstand;
-        // console.log(huidigeAfstand, aankomstTijd, routeTotNuToe);
+        console.log(huidigeAfstand, aankomstTijd, routeTotNuToe);
         if (meesteAfstand >= config.minimale_update_afstand) {
             schrijfRoutes();
         }
