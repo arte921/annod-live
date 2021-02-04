@@ -2,20 +2,38 @@ const fs = require("fs");
 const path = require("path");
 const haalDataOp = require('./haalDataOp.js');
 const wacht = require('./wacht.js');
+const readJSONSync = require('./readJSONSync.js');
+
+const config = readJSONSync("config");
+
+let lopendeRequests = 0;
 
 module.exports = async (pad, locatie) => {
     let data;
 
     while (true) {
+        if (lopendeRequests >= config.maximum_requests_per_tijdseenheid) {
+            // wacht tot weer een request kan worden gestuurd
+            await wacht(config.ratelimit_wachttijd_milliseconden_preventief);
+            continue;
+        }
+
+        lopendeRequests++;
+        setTimeout((() => lopendeRequests--), config.ratelimit_tijdseenheid_milliseconden);
+
         data = await haalDataOp(pad);
 
+
         if (data.statusCode == 429) {
-            console.log("ratelimit");
-            await wacht(100);
+            // NS geeft ratelimit aan
+            console.log("ratelimit", lopendeRequests);
+            await wacht(config.ratelimit_wachttijd_milliseconden_curatief);
             continue;
         } else if (data.statusCode == 38) {
+            // http error in client wordt 38 teruggestuurd door haalDataOp
             continue;
         } else {
+            // request succesvol afgerond
             break;
         }
     }
