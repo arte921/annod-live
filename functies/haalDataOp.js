@@ -3,7 +3,7 @@ const https = require('https');
 const readJSONSync = require('./readJSONSync.js');
 const config = readJSONSync("config");
 
-const main = (pad, json = true) => {
+module.exports = (pad, json = true) => {
 
     const options = {
         host: 'gateway.apiportal.ns.nl',
@@ -19,10 +19,8 @@ const main = (pad, json = true) => {
                 response.on('data', (deel) => antwoord += deel);
                 response.on('end', () => resolve(json ? JSON.parse(antwoord) : antwoord));
             });
-            request.end();
             request.on('error', () => resolve({statusCode: 429}));
+            request.end();
         }
     );
 };
-
-module.exports = main;

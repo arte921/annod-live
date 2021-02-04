@@ -8,7 +8,7 @@ const dowloadData = require('./functies/dowloadData.js');
 const haalDataOp = require('./functies/haalDataOp.js');
 const vindStation = require('./functies/vindStation.js');
 const stationAfstand = require('./functies/stationAfstand.js');
-const writeJSONSync = require('./functies/writeJSONSync.js');
+const writeJSON = require('./functies/writeJSON.js');
 const haalStationOp = require('./functies/haalStationOp.js');
 
 const config = readJSONSync("config");
@@ -18,15 +18,21 @@ const eindDatum = new Date(startDatum.getTime() + config.speelduur_minuten * 60 
 
 console.log(startDatum, eindDatum);
 
+let ritjesPromises = [];
+
 let kandidaatRoutes = [];
 let meesteAfstand = 0;
 
-const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie, huidigeAfstand, routeTotNuToe) => {
+const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie, huidigeAfstand, routeTotNuToe, routeDeltas, nietVolgen) => {
     const vroegsteVertrektijd = new Date(aankomstTijd.getTime() + config.minimum_overstaptijd_seconden * 1000);
     // check of rit tot nu toe nog voldoet
     if (vroegsteVertrektijd > eindDatum ||
         (routeTotNuToe.length >= config.snelheidsmetingen_begin_ritjes &&
-            huidigeAfstand / ((vroegsteVertrektijd - startDatum) / 3600000) < config.minimum_gemiddelde_snelheid)) return;
+            huidigeAfstand / ((vroegsteVertrektijd - startDatum) / 3600000) < config.minimum_gemiddelde_snelheid) ||
+        (
+            routeDeltas.length > config.maximum_ritjes_stilstand &&
+            routeDeltas.slice(- config.maximum_ritjes_stilstand - 1).reduce((a, b) => a + b) == 0)
+    ) return;
     
 
     const laatsteVertrekTijd = new Date(aankomstTijd.getTime() + config.maximum_overstaptijd_seconden * 1000);
@@ -48,6 +54,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
     let berekendeVertrekken = [];
     // console.log("E");
     for (const rit of ritjes.departures) {
+        if (rit.direction == nietVolgen) return;
         if (!config.toegestane_treintypen.includes(rit.trainCategory)) continue;
         if (berekendeVertrekken.includes(rit.direction)) continue;
         berekendeVertrekken.push(rit.direction);
@@ -77,7 +84,15 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
 
                 // er wordt op het station gestopt
                 if (!station.passing) {
-                    berekenRitjes(new Date(station.plannedArrivalDateTime), huidigStation.code, negeerbareFeatures, afstand, [...routeTotNuToe, station.name]);
+                    ritjesPromises.push(berekenRitjes(
+                        new Date(station.plannedArrivalDateTime),
+                        huidigStation.code,
+                        negeerbareFeatures,
+                        afstand,
+                        [...routeTotNuToe, station.name],
+                        [...routeDeltas, afstand - huidigeAfstand],
+                        rit.direction
+                    ));
                 }
 
                 vorigeStationCode = huidigStation.code;
@@ -86,11 +101,20 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
     }
 };
 
-// (async () => {
-//     await berekenRitjes(startDatum, config.start_station, [], 0, []);
-//     // console.log(`${kandidaatRoutes.length} routes gevonden in ${(new Date() - programmaStartDatum) / 1000} seconden`);
-//     // kandidaatRoutes.sort((a, b) => b.afstand - a.afstand);
-//     // writeJSONSync(kandidaatRoutes, 'resultaat');
-// })();
+const schrijfRoutes = async () => {
+    kandidaatRoutes.sort((a, b) => b.afstand - a.afstand);
+    await writeJSON(kandidaatRoutes, 'resultaat');
+}
 
-berekenRitjes(startDatum, config.start_station, [], 0, []);
+process.on('SIGINT', async () => {
+    await schrijfRoutes();
+    process.exit();
+});
+
+ritjesPromises.push(berekenRitjes(startDatum, config.start_station, [], 0, [], [], ''));
+
+(async () => {
+    await Promise.all(ritjesPromises);
+    console.log(`${kandidaatRoutes.length} routes gevonden in ${(new Date() - programmaStartDatum) / 1000} seconden`);
+    await schrijfRoutes();
+})();
