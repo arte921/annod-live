@@ -99,7 +99,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
                     continue;
                 }
                 
-                if (huidigStation.land == "D") continue;    //  TODO: meer landen
+                if (huidigStation.land != "NL") continue;    //  TODO: meer landen
                 
                 afstand += stationAfstand(vorigeStationCode, huidigStation.code, negeerbareFeatures);
 
@@ -130,10 +130,7 @@ const schrijfRoutes = async () => {
     await writeJSON(kandidaatRoutes, 'resultaat');
 }
 
-process.on('SIGINT', async () => {
-    await schrijfRoutes();
-    process.exit();
-});
+process.on('SIGINT', () => schrijfRoutes().then(process.exit));
 
 ritjesPromises.push(berekenRitjes(startDatum, config.start_station, [], 0, [{
         station: vindStationVanCode(config.start_station).namen.lang,
