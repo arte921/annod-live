@@ -7,6 +7,7 @@ const legAfstand = require('./functies/legAfstand.js');
 const dowloadData = require('./functies/dowloadData.js');
 const haalDataOp = require('./functies/haalDataOp.js');
 const vindStation = require('./functies/vindStation.js');
+const vindStationVanCode = require('./functies/vindStationVanCode.js');
 const stationAfstand = require('./functies/stationAfstand.js');
 const writeJSON = require('./functies/writeJSON.js');
 const haalStationOp = require('./functies/haalStationOp.js');
@@ -27,7 +28,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
     const vroegsteVertrektijd = new Date(aankomstTijd.getTime() + config.minimum_overstaptijd_seconden * 1000);
     // check of rit tot nu toe nog voldoet
     if (vroegsteVertrektijd > eindDatum ||
-        (routeTotNuToe.length >= config.snelheidsmetingen_begin_ritjes &&
+        (routeTotNuToe.length > config.snelheidsmetingen_begin_ritjes &&
             huidigeAfstand / ((vroegsteVertrektijd - startDatum) / 3600000) < config.minimum_gemiddelde_snelheid) ||
         (
             routeDeltas.length > config.maximum_ritjes_stilstand &&
@@ -111,7 +112,7 @@ process.on('SIGINT', async () => {
     process.exit();
 });
 
-ritjesPromises.push(berekenRitjes(startDatum, config.start_station, [], 0, [], [], ''));
+ritjesPromises.push(berekenRitjes(startDatum, config.start_station, [], 0, [vindStationVanCode(config.start_station).namen.lang], [], ''));
 
 (async () => {
     await Promise.all(ritjesPromises);
