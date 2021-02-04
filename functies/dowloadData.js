@@ -8,6 +8,9 @@ const config = readJSONSync("config");
 
 let lopendeRequests = 0;
 
+let ratelimits = 0;
+let succesvolleRequests = 0;
+
 module.exports = async (pad, locatie) => {
     let data;
 
@@ -23,10 +26,10 @@ module.exports = async (pad, locatie) => {
 
         data = await haalDataOp(pad);
 
-
         if (data.statusCode == 429) {
             // NS geeft ratelimit aan
-            console.log("ratelimit", lopendeRequests);
+            ratelimits++;
+            if (ratelimits % 100 == 0) console.log(`${ratelimits} keer geratelimit, ${succesvolleRequests} keer doorgelaten`);
             await wacht(config.ratelimit_wachttijd_milliseconden_curatief);
             continue;
         } else if (data.statusCode == 38) {
@@ -34,6 +37,7 @@ module.exports = async (pad, locatie) => {
             continue;
         } else {
             // request succesvol afgerond
+            succesvolleRequests++;
             break;
         }
     }
