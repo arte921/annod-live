@@ -15,7 +15,7 @@ let preCachedRequest = 0;
 
 let cache = readJSONSync("cache");
 
-setTimeout((() => writeJSON(cache, "cache")), 1000);
+// setTimeout((() => writeJSON(cache, "cache")), 1000);
 
 module.exports = async (pad, locatie) => {
     let data;
@@ -51,7 +51,7 @@ module.exports = async (pad, locatie) => {
         } else {
             // request succesvol afgerond
             succesvolleRequests++;
-            cache[pad] = data;
+            // cache[pad] = data;
             break;
         }
     }

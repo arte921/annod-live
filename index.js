@@ -9,6 +9,8 @@ const vindStationVanCode = require('./functies/vindStationVanCode.js');
 const stationAfstand = require('./functies/stationAfstand.js');
 const writeJSON = require('./functies/writeJSON.js');
 const haalStationOp = require('./functies/haalStationOp.js');
+const haalRitjesOp = require('./functies/haalReisOp.js');
+const haalReisOp = require('./functies/haalReisOp.js');
 
 const config = readJSONSync("config");
 
@@ -64,7 +66,9 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         berekendeVertrekken.push(rit.direction);
         const volledigeBestemming = vindStation(rit.direction);
         if (!volledigeBestemming) continue;
-        const volledigeritRaw = await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`, "trip");
+
+        const volledigeritRaw = await haalReisOp(station, volledigeBestemming.code, vroegsteVertrektijd.toISOString());
+        // await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`, "trip");
         if (!volledigeritRaw.trips) return;
 
         let ritnummer = 0;
@@ -135,6 +139,7 @@ ritjesPromises.push(berekenRitjes(startDatum, config.start_station, [], 0, [{
         station: vindStationVanCode(config.start_station).namen.lang,
         aankomsttijd: startDatum.toISOString()
     }], [], ''));
+
 
 (async () => {
     await Promise.all(ritjesPromises);
