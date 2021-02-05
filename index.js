@@ -88,6 +88,8 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         let vorigeStationCode = "";
         let afstand = huidigeAfstand;
 
+        let ritjesWachtrij = [];
+
         for (const leg of volledigeritRaw.trips[0].legs) {
             if (leg.origin.plannedDateTime > laatsteVertrekTijd) return;
             for (const [index, station] of leg.stops.entries()) {
@@ -105,7 +107,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
 
                 // er wordt op het station gestopt
                 if (!station.passing) {
-                    ritjesPromises.push(berekenRitjes(
+                    ritjesWachtrij.push([
                         new Date(station.plannedArrivalDateTime),
                         huidigStation.code,
                         negeerbareFeatures,
@@ -116,12 +118,13 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
                         }],
                         [...routeDeltas, afstand - huidigeAfstand],
                         rit.direction
-                    ));
+                    ]);
                 }
 
                 vorigeStationCode = huidigStation.code;
             }
         }
+        ritjesWachtrij.reverse().forEach((taak) => ritjesPromises.push(berekenRitjes(...taak)));
     }
 };
 
