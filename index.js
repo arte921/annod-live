@@ -24,6 +24,7 @@ let ritjesPromises = [];
 let kandidaatRoutes = [];
 let meesteAfstand = 0;
 
+
 const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie, huidigeAfstand, routeTotNuToe, routeDeltas, nietVolgen) => {
     const vroegsteVertrektijd = new Date(aankomstTijd.getTime() + config.minimum_overstaptijd_seconden * 1000);
     // check of rit tot nu toe nog voldoet
@@ -58,6 +59,12 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
     let ritjes = await haalStationOp(station);
 
     let berekendeVertrekken = [];
+
+    const vroegsteVertrekMinuten = vroegsteVertrektijd.getMinutes();
+
+    const wachttijd = (vertrekTijd) => (new Date(vertrekTijd).getMinutes() - vroegsteVertrekMinuten + 60) % 60;
+
+    ritjes.departures.sort((a, b) => (wachttijd(a.plannedDateTime) - wachttijd(b.plannedDateTime)));
 
     for (const rit of ritjes.departures) {
         if (rit.direction == nietVolgen) continue;
