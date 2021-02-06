@@ -40,7 +40,6 @@ module.exports = async (pad, locatie) => {
         } else {
             // request succesvol afgerond
             succesvolleRequests++;
-            console.log(succesvolleRequests);
             break;
         }
     }
