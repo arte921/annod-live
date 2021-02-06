@@ -75,10 +75,7 @@ const berekenRitjes = async (aankomstTijd, station, negeerbareFeaturesReferentie
         if (!volledigeBestemming) continue;
 
         const volledigeritRaw = await haalReisOp(station, volledigeBestemming.code, vroegsteVertrektijd.toISOString());
-        // await dowloadData(`/reisinformatie-api/api/v3/trips?fromStation=${station}&toStation=${volledigeBestemming.code}&dateTime=${vroegsteVertrektijd.toISOString()}&yearCard=true&passing=true`, "trip");
         if (!volledigeritRaw.trips) return;
-
-        let ritnummer = 0;
 
         let vertrekTijd = new Date(volledigeritRaw.trips[0].legs[0].origin.plannedDateTime);
         for (const vertrekKandidaat of volledigeritRaw.trips) {
