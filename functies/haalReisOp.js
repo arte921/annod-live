@@ -19,8 +19,8 @@ module.exports = async (beginStation, eindStation, vertrekTijd) => {
 
     const tijd = Date.now()
     if (tijd - laatsteDownload > 1000) {
-        await writeJSON(cache, 'reiscache'); // corrupt bestand bij sigint
         laatsteDownload = tijd;
+        await writeJSON(cache, 'reiscache');
     }
     
     return ritjes;
