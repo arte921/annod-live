@@ -7,6 +7,7 @@ const dowloadData = require('./functies/dowloadData.js');
 const vindStation = require('./functies/vindStation.js');
 const vindStationVanCode = require('./functies/vindStationVanCode.js');
 const stationAfstand = require('./functies/stationAfstand.js');
+const stationAfstandKilonet = require('./functies/stationAfstandKilonet.js');
 const writeJSON = require('./functies/writeJSON.js');
 const haalStationOp = require('./functies/haalStationOp.js');
 const haalRitjesOp = require('./functies/haalReisOp.js');

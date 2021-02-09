@@ -20,8 +20,6 @@ module.exports = (station1, station2, negeerbareFeatures) => {
         if (!config.dubbele_features.includes(featureId)) return 0;
         if (negeerbareFeatures.filter((feature) => config.dubbele_features.includes(feature)).length > 2) return 0;
     }
-    
-    if (negeerbareFeatures)
 
     negeerbareFeatures.push(featureId);
 
