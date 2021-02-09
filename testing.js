@@ -1,10 +1,11 @@
 
-const stationAfstand = require('./functies/stationAfstand.js');
+const leesCSV = require('./functies/leesCSV.js');
+const haalStationNaamOp = require('./functies/haalStationNaamOp.js');
+const leesCSVSync = require('./functies/leesCSVSync.js');
 
 (async () => {
-    const kilonet = await leesCSV("kilonetnew");
-    const station1 = "ah";
-    const station2 = "ahz";
-    const afstandEntry = kilonet.find((entry) => entry.includes(station1) && entry.includes(station2));
-    const afstand = afstand[3] - 0 + 0.01 * afstand[4];
+    console.log(haalStationNaamOp("ah"));
+    // console.log(leesCSVSync("stations"));
+    // const dienstregeling = await leesCSV("ff_timetbls_spiekbest");
+    // console.log(dienstregeling.map((entry) => [entry[1]]));
 })();
