@@ -12,16 +12,6 @@ const tijdNaarMinutenGetal = (tijd) => (60 * tijd.substring(0, 2) - 0) + (tijd.s
 const getalBeginNullen = (getal, totaleLengte = 2) => ("0".repeat(totaleLengte) + getal).slice(-totaleLengte);
 const minutenGetalNaarTijd = (minuten) => getalBeginNullen(Math.floor(minuten / 60)) + getalBeginNullen(minuten % 60);
 
-const eindStation = (rit) => {
-    const regels = splitRegels(rit);
-    for (const regel of regels) {
-        if (regel.charAt(0) == "<") {
-            const regex = /[^ ]*/;
-            return regex.exec(regel.substring(1)).toString();
-        }
-    }
-}
-
 const haalEnkeleRegelOp = (rit, sleutel) => splitEntries(splitRegels(rit)
     .find((regel) => regel.charAt(0) == sleutel).substring(1));
 
@@ -75,7 +65,6 @@ const eindTijdMinuten = startTijdMinuten + config.speelduur_minuten;
 
 const dienstregeling = leesIFFSync('timetbls').split("#").map((entry) => "#" + entry).slice(1);
 const voetnoten = leesIFFSync('footnote').split("#").slice(1).map((entry) => splitRegels(entry)[1]);
-console.log(ritVanafStation(dienstregeling[29676], 'op'));
 
 const rijdtOpDag = (rit, dag) => voetnoten[
     splitRegels(rit)
@@ -117,7 +106,7 @@ const stationVertrekkenMoment = (station, minimumTijdMinuten, maximumTijdMinuten
     for (const [key, vertrek] of vertrekken[station].entries()) {
         const vertrekTijdMinuten = vertrek.vertrektijd;
         if (vertrekTijdMinuten >= minimumTijdMinuten && vertrekTijdMinuten <= maximumTijdMinuten && rijdtOpDag(vertrek.rit, config.dag)) {
-            resultaat.push(vertrek);
+            resultaat.push(vertrek.rit);
         };
     }
     return resultaat;
@@ -128,10 +117,10 @@ const stationVertrekkenMoment = (station, minimumTijdMinuten, maximumTijdMinuten
 // console.log(dienstregeling[29676]);
 // console.log(haalEnkeleRegelOp(dienstregeling[29676], "&"));
 
-let kandidaatRoutes = [];
 let meesteAfstand = 0;
 
 const berekenRitjes = (aankomstTijdMinuten, station, negeerbareFeaturesReferentie, huidigeAfstand, routeTotNuToe, routeDeltas, nietVolgen) => {
+    // console.log(aankomstTijdMinuten, station, negeerbareFeaturesReferentie, huidigeAfstand, routeTotNuToe, routeDeltas, nietVolgen);
     const vroegsteVertrektijd = aankomstTijdMinuten + config.minimum_overstaptijd_seconden / 60;
 
     // check of rit tot nu toe nog voldoet
@@ -140,24 +129,18 @@ const berekenRitjes = (aankomstTijdMinuten, station, negeerbareFeaturesReferenti
         || (
             routeTotNuToe.length > config.snelheidsmetingen_begin_ritjes &&
             huidigeAfstand / ((vroegsteVertrektijd - startTijdMinuten) / 60) < config.minimum_gemiddelde_snelheid
-        ) || (
+        ) /*|| (
             routeDeltas.length > config.maximum_ritjes_stilstand &&
             routeDeltas.slice(- config.maximum_ritjes_stilstand - 1).reduce((a, b) => a + b) == 0
-        )
+        )*/
     ) return;
 
     const laatsteVertrekTijd = aankomstTijdMinuten + config.maximum_overstaptijd_seconden / 60;
     let negeerbareFeatures = [...negeerbareFeaturesReferentie];
 
-    kandidaatRoutes.push({
-        afstand: huidigeAfstand,
-        route: routeTotNuToe,
-        eindtijd: aankomstTijd
-    });
-
     if (huidigeAfstand > meesteAfstand) {
         meesteAfstand = huidigeAfstand;
-        console.log(huidigeAfstand, aankomstTijdMinuten, routeTotNuToe);
+        console.log(huidigeAfstand, minutenGetalNaarTijd(aankomstTijdMinuten), routeTotNuToe);
         if (meesteAfstand >= config.minimale_update_afstand) {
             // schrijfRoutes();
         }
@@ -168,27 +151,23 @@ const berekenRitjes = (aankomstTijdMinuten, station, negeerbareFeaturesReferenti
     let berekendeVertrekken = [];
 
     for (const rit of ritjes) {
-        if (!config.toegestane_treintypen.includes(haalEnkeleRegelOp(rit)[0])) continue;
-        const richting = eindStation(rit);
+        if (!config.toegestane_treintypen.includes(haalEnkeleRegelOp(rit, "&")[0])) continue;
+        const richting = haalEnkeleRegelOp(rit, "<")[0];
         if (richting == nietVolgen) continue;
         if (berekendeVertrekken.includes(richting)) continue;
         berekendeVertrekken.push(richting);
 
         let afstand = huidigeAfstand;
-
-        let ritjesWachtrij = [];
         
         const verdereRit = ritVanafStation(rit, station);
+        // console.log(verdereRit);
 
         let vorigeStation = station;
         for (const vertrek of verdereRit) {
-
-            // if (huidigStation.land != "NL") continue;
-
-            afstand += stationAfstand(vorigeStation, vertrek.station, negeerbareFeatures);
+            afstand += stationAfstandKilonet(vorigeStation, vertrek.station, negeerbareFeatures);
 
             // er wordt op het station gestopt
-            if (station.stopt) {
+            if (vertrek.stopt) {
                 berekenRitjes(
                     vertrek.aankomsttijd,
                     vertrek.station,
@@ -205,3 +184,14 @@ const berekenRitjes = (aankomstTijdMinuten, station, negeerbareFeaturesReferenti
     }
 };
 
+console.log("begin");
+
+berekenRitjes(
+    startTijdMinuten,
+    config.start_station,
+    [],
+    0,
+    [config.start_station],
+    [],
+    ''
+);
